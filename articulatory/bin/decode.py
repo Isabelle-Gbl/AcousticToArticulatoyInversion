@@ -20,6 +20,8 @@ from tqdm import tqdm
 
 import articulatory.transforms
 
+
+# ich checke nicht ob ich die brauche maybe print 'ISABELLE
 from articulatory.datasets import MelDataset, audio_mel_dataset
 from articulatory.datasets import MelSCPDataset
 from articulatory.datasets import ArtDataset
@@ -36,19 +38,27 @@ def ar_loop(model, x, config, do_wsola=False, modality=None, generator2=False):
     Return:
         signal: (audio_len,)
     '''
-    if generator2:
-        params_key = "generator2_params"
-        w2a = False
-    else:
-        params_key = "generator_params"
-        w2a = config["dataset_mode"] == 'w2a'
+    params_key = "generator_params"
+    w2a = config["dataset_mode"] == 'w2a'
+    # if generator2:
+    #     params_key = "generator2_params"
+    #     w2a = False
+    # else:
+    #     params_key = "generator_params"
+    #     w2a = config["dataset_mode"] == 'w2a'
+
     audio_chunk_len = config["batch_max_steps"]
-    if w2a:
-        in_chunk_len = audio_chunk_len
-        past_out_len = int(config[params_key]["ar_input"]/config[params_key]["out_channels"])
-    else:
-        in_chunk_len = int(audio_chunk_len/config["hop_size"])
-        past_out_len = config[params_key]["ar_input"]
+
+
+    in_chunk_len = audio_chunk_len
+    past_out_len = int(config[params_key]["ar_input"]/config[params_key]["out_channels"])
+    # if w2a:
+    #     in_chunk_len = audio_chunk_len
+    #     past_out_len = int(config[params_key]["ar_input"]/config[params_key]["out_channels"])
+    # else:
+    #     in_chunk_len = int(audio_chunk_len/config["hop_size"])
+    #     past_out_len = config[params_key]["ar_input"]
+
     if modality is not None:
         scale_factor = config["sampling_rate"]/config["hop_size"]*config["hop_sizes"][modality]/config["sampling_rates"][modality]
     if not do_wsola:
@@ -70,10 +80,13 @@ def ar_loop(model, x, config, do_wsola=False, modality=None, generator2=False):
                 new_cin[modality] = cin
                 cin = new_cin
             cout = model(cin, ar=prev_samples)  # a2w (1, 1, audio_chunk_length)
-            if w2a:
-                outs.append(cout[0].transpose(0, 1))
-            else:
-                outs.append(cout[0][0])
+
+            outs.append(cout[0].transpose(0, 1))
+            # if w2a:
+            #     outs.append(cout[0].transpose(0, 1))
+            # else:
+            #     outs.append(cout[0][0])
+            
             if past_out_len <= audio_chunk_len:
                 prev_samples = cout[:, :, -past_out_len:]
             else:
@@ -198,6 +211,7 @@ def main():
         config["dataset_mode"] = dataset_mode
     else:
         dataset_mode = config["dataset_mode"]
+
     if "transform" not in config:
         transform = None
     else:
@@ -267,10 +281,12 @@ def main():
     logging.info(f"The number of features to be decoded = {len(dataset)}.")
 
     # setup model
-    if torch.cuda.is_available():
-        device = torch.device("cuda")
-    else:
-        device = torch.device("cpu")
+    device = torch.device("cpu")
+    # if torch.cuda.is_available():
+    #     device = torch.device("cuda")
+    # else:
+    #     device = torch.device("cpu")
+
     model = load_model(args.checkpoint, config)
     logging.info(f"Loaded model parameters from {args.checkpoint}.")
     if args.normalize_before:
