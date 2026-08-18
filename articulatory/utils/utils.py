@@ -297,20 +297,24 @@ def load_model(checkpoint, config=None, stats=None, generator2=False):
     Args:
         checkpoint (str): Checkpoint path.
         config (dict): Configuration dict.
-        stats (str): Statistics file path.
+        stats (str): Statistics file path. --> does not exist rn
 
     Return:
         torch.nn.Module: Model instance.
 
     """
-    if generator2:
-        type_key = "generator2_type"
-        params_key = "generator2_params"
-        generator_key = "generator2"
-    else:
-        type_key = "generator_type"
-        params_key = "generator_params"
-        generator_key = "generator"
+    type_key = "generator_type"
+    params_key = "generator_params"
+    generator_key = "generator"
+
+    # if generator2:
+    #     type_key = "generator2_type"
+    #     params_key = "generator2_params"
+    #     generator_key = "generator2"
+    # else:
+    #     type_key = "generator_type"
+    #     params_key = "generator_params"
+    #     generator_key = "generator"
     # load config if not provided
     if config is None:
         dirname = os.path.dirname(checkpoint)
@@ -332,28 +336,35 @@ def load_model(checkpoint, config=None, stats=None, generator2=False):
         for k, v in config[params_key].items()
     }
     model = model_class(**generator_params)
-    if generator2:
-        model.load_state_dict(
-            torch.load(checkpoint, map_location="cpu")["model"][generator_key][0]
-        )
-    else:
-        model.load_state_dict(
-            torch.load(checkpoint, map_location="cpu")["model"][generator_key]
-        )
+    model.load_state_dict(
+                torch.load(checkpoint, map_location="cpu")["model"][generator_key]
+            )
+
+    # if generator2:
+    #     model.load_state_dict(
+    #         torch.load(checkpoint, map_location="cpu")["model"][generator_key][0]
+    #     )
+    # else:
+    #     model.load_state_dict(
+    #         torch.load(checkpoint, map_location="cpu")["model"][generator_key]
+    #     )
+
+
 
     # check stats existence
-    if stats is None:
-        dirname = os.path.dirname(checkpoint)
-        if config["format"] == "hdf5":
-            ext = "h5"
-        else:
-            ext = "npy"
-        if os.path.exists(os.path.join(dirname, f"stats.{ext}")):
-            stats = os.path.join(dirname, f"stats.{ext}")
+    ## there is no stats file probably we could delete those lines and just say 
+    # if stats is None:
+    #     dirname = os.path.dirname(checkpoint)
+    #     if config["format"] == "hdf5":
+    #         ext = "h5"
+    #     else:
+    #         ext = "npy"
+    #     if os.path.exists(os.path.join(dirname, f"stats.{ext}")):
+    #         stats = os.path.join(dirname, f"stats.{ext}")
 
-    # load stats
-    if stats is not None:
-        model.register_stats(stats)
+    # # load stats
+    # if stats is not None:
+    #     model.register_stats(stats)
 
     # add pqmf if needed
     if config[params_key]["out_channels"] > 1:
@@ -372,36 +383,36 @@ def load_model(checkpoint, config=None, stats=None, generator2=False):
     return model
 
 
-def download_pretrained_model(tag, download_dir=None):
-    """Download pretrained model form google drive.
+# def download_pretrained_model(tag, download_dir=None):
+#     """Download pretrained model form google drive.
 
-    Args:
-        tag (str): Pretrained model tag.
-        download_dir (str): Directory to save downloaded files.
+#     Args:
+#         tag (str): Pretrained model tag.
+#         download_dir (str): Directory to save downloaded files.
 
-    Returns:
-        str: Path of downloaded model checkpoint.
+#     Returns:
+#         str: Path of downloaded model checkpoint.
 
-    """
-    assert tag in PRETRAINED_MODEL_LIST, f"{tag} does not exists."
-    id_ = PRETRAINED_MODEL_LIST[tag]
-    if download_dir is None:
-        download_dir = os.path.expanduser("~/.cache/articulatory")
-    output_path = f"{download_dir}/{tag}.tar.gz"
-    os.makedirs(f"{download_dir}", exist_ok=True)
-    with FileLock(output_path + ".lock"):
-        if not os.path.exists(output_path):
-            # lazy load for compatibility
-            import gdown
+#     """
+#     assert tag in PRETRAINED_MODEL_LIST, f"{tag} does not exists."
+#     id_ = PRETRAINED_MODEL_LIST[tag]
+#     if download_dir is None:
+#         download_dir = os.path.expanduser("~/.cache/articulatory")
+#     output_path = f"{download_dir}/{tag}.tar.gz"
+#     os.makedirs(f"{download_dir}", exist_ok=True)
+#     with FileLock(output_path + ".lock"):
+#         if not os.path.exists(output_path):
+#             # lazy load for compatibility
+#             import gdown
 
-            gdown.download(
-                f"https://drive.google.com/uc?id={id_}", output_path, quiet=False
-            )
-            with tarfile.open(output_path, "r:*") as tar:
-                for member in tar.getmembers():
-                    if member.isreg():
-                        member.name = os.path.basename(member.name)
-                        tar.extract(member, f"{download_dir}/{tag}")
-    checkpoint_path = find_files(f"{download_dir}/{tag}", "checkpoint*.pkl")
+#             gdown.download(
+#                 f"https://drive.google.com/uc?id={id_}", output_path, quiet=False
+#             )
+#             with tarfile.open(output_path, "r:*") as tar:
+#                 for member in tar.getmembers():
+#                     if member.isreg():
+#                         member.name = os.path.basename(member.name)
+#                         tar.extract(member, f"{download_dir}/{tag}")
+#     checkpoint_path = find_files(f"{download_dir}/{tag}", "checkpoint*.pkl")
 
-    return checkpoint_path[0]
+#     return checkpoint_path[0]

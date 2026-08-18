@@ -21,7 +21,6 @@ from tqdm import tqdm
 import articulatory.transforms
 
 
-# ich checke nicht ob ich die brauche maybe print 'ISABELLE
 from articulatory.datasets import MelDataset, audio_mel_dataset
 from articulatory.datasets import MelSCPDataset
 from articulatory.datasets import ArtDataset
@@ -40,24 +39,11 @@ def ar_loop(model, x, config, do_wsola=False, modality=None, generator2=False):
     '''
     params_key = "generator_params"
     w2a = config["dataset_mode"] == 'w2a'
-    # if generator2:
-    #     params_key = "generator2_params"
-    #     w2a = False
-    # else:
-    #     params_key = "generator_params"
-    #     w2a = config["dataset_mode"] == 'w2a'
-
     audio_chunk_len = config["batch_max_steps"]
 
 
     in_chunk_len = audio_chunk_len
     past_out_len = int(config[params_key]["ar_input"]/config[params_key]["out_channels"])
-    # if w2a:
-    #     in_chunk_len = audio_chunk_len
-    #     past_out_len = int(config[params_key]["ar_input"]/config[params_key]["out_channels"])
-    # else:
-    #     in_chunk_len = int(audio_chunk_len/config["hop_size"])
-    #     past_out_len = config[params_key]["ar_input"]
 
     if modality is not None:
         scale_factor = config["sampling_rate"]/config["hop_size"]*config["hop_sizes"][modality]/config["sampling_rates"][modality]
@@ -82,11 +68,6 @@ def ar_loop(model, x, config, do_wsola=False, modality=None, generator2=False):
             cout = model(cin, ar=prev_samples)  # a2w (1, 1, audio_chunk_length)
 
             outs.append(cout[0].transpose(0, 1))
-            # if w2a:
-            #     outs.append(cout[0].transpose(0, 1))
-            # else:
-            #     outs.append(cout[0][0])
-            
             if past_out_len <= audio_chunk_len:
                 prev_samples = cout[:, :, -past_out_len:]
             else:
@@ -108,7 +89,6 @@ def ar_loop(model, x, config, do_wsola=False, modality=None, generator2=False):
             outs.append(signal[0][0])
             if art_i < len(ins)-1:
                 prev_samples = signal[:, :, int(audio_chunk_len/2)-past_out_len:int(audio_chunk_len/2)]
-                # print(signal.shape, in_chunk_len, prev_samples.shape, past_out_len)
                 assert prev_samples.shape[2] == past_out_len
         return outs, ins
 
@@ -209,8 +189,10 @@ def main():
     if "dataset_mode" not in config:
         dataset_mode = 'default'
         config["dataset_mode"] = dataset_mode
+        print("HALLO")
     else:
         dataset_mode = config["dataset_mode"]
+
 
     if "transform" not in config:
         transform = None
