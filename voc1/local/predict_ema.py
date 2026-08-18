@@ -28,8 +28,8 @@ input_modality = 'hubert'
 interp_factor = 4
 hop_length = 80
 
-inversion_checkpoint_path = "exp/my_model_h2/best_mel_ckpt.pkl" 
-inversion_config_path = "exp/my_model_h2/config.yml" 
+inversion_checkpoint_path = "voc1/exp/my_model_h2/best_mel_ckpt.pkl" 
+inversion_config_path = "voc1/exp/my_model_h2/config.yml" 
 
 # load config
 with open(inversion_config_path) as f:
@@ -40,11 +40,11 @@ inversion_model = load_model(inversion_checkpoint_path, inversion_config)
 inversion_model.remove_weight_norm()
 inversion_model = inversion_model.eval().to(inversion_device)
 
-wav_d = 'data/input'
+wav_d = 'voc1/data/input'
 fs = os.listdir(wav_d)
 fs = [f for f in fs if f.endswith('.wav')]
 
-output_feats_d = 'data/output'
+output_feats_d = 'voc1/data/output'
 if not os.path.exists(output_feats_d):
     os.makedirs(output_feats_d)
 
